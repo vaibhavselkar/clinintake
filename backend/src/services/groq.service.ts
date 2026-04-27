@@ -2,7 +2,7 @@ import Groq from 'groq-sdk';
 import { config } from '../config/env';
 import { logger } from '../utils/logger';
 
-export const AGENT_MODEL = 'meta-llama/llama-4-maverick-17b-128e-instruct';
+export const AGENT_MODEL = 'llama-3.3-70b-versatile';
 export const EXTRACTOR_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
 interface ChatMessage {
