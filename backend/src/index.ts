@@ -9,7 +9,17 @@ import healthRoutes from './routes/health.routes';
 
 const app = express();
 
-app.use(cors({ origin: config.corsOrigin, methods: ['GET', 'POST', 'DELETE'] }));
+const allowedOrigins = config.corsOrigin.split(',').map((o) => o.trim());
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // allow server-to-server / curl (no origin header)
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    methods: ['GET', 'POST', 'DELETE'],
+  })
+);
 app.use(express.json({ limit: '1mb' }));
 
 const limiter = rateLimit({
