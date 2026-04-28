@@ -8,6 +8,9 @@ import {
   signOut,
   updateProfile,
 } from 'firebase/auth';
+import { useSessionStore } from '../store/session.store';
+import { useIntakeStore } from '../store/intake.store';
+import { useBriefStore } from '../store/brief.store';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../lib/firebase';
 import { AppUser, UserRole } from '../types/auth.types';
@@ -89,6 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logout() {
     await signOut(auth);
     setAppUser(null);
+    // Clear all in-memory state so next user starts fresh
+    useSessionStore.getState().reset();
+    useIntakeStore.getState().reset();
+    useBriefStore.getState().reset();
   }
 
   return (
