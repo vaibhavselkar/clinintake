@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types/auth.types';
 
 export function RegisterPage() {
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -23,19 +23,6 @@ export function RegisterPage() {
       navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleGoogle() {
-    setError('');
-    setLoading(true);
-    try {
-      await signInWithGoogle(role);
-      navigate('/');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google sign in failed');
     } finally {
       setLoading(false);
     }

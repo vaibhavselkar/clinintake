@@ -4,7 +4,7 @@ import { LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,19 +20,6 @@ export function LoginPage() {
       navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleGoogle() {
-    setError('');
-    setLoading(true);
-    try {
-      await signInWithGoogle('clinician');
-      navigate('/');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google sign in failed');
     } finally {
       setLoading(false);
     }
