@@ -5,11 +5,15 @@ import { useAuth } from '../context/AuthContext';
 import { getBriefsByPatient } from '../services/firestore.service';
 import { SavedBrief } from '../types/auth.types';
 import { useBriefStore } from '../store/brief.store';
+import { useSessionStore } from '../store/session.store';
+import { useIntakeStore } from '../store/intake.store';
 
 export function PatientDashboard() {
   const { appUser, logout } = useAuth();
   const navigate = useNavigate();
   const setBrief = useBriefStore((s) => s.setBrief);
+  const { setSelectedPatient, setMode, reset: resetSession } = useSessionStore();
+  const resetIntake = useIntakeStore((s) => s.reset);
   const [briefs, setBriefs] = useState<SavedBrief[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,6 +27,23 @@ export function PatientDashboard() {
   async function handleLogout() {
     await logout();
     navigate('/login');
+  }
+
+  function startIntake() {
+    if (!appUser) return;
+    resetSession();
+    resetIntake();
+    // Patient interviews as themselves — use their name/info as the subject
+    setSelectedPatient({
+      key: 'patient_self',
+      name: appUser.displayName,
+      age: 0,
+      sex: 'unknown' as 'male',
+      chiefComplaintHint: 'Your health concern',
+      personality: 'real patient',
+    });
+    setMode('chat');
+    navigate('/interview');
   }
 
   function openBrief(b: SavedBrief) {
@@ -45,7 +66,7 @@ export function PatientDashboard() {
             <span>{appUser?.displayName}</span>
           </div>
           <button
-            onClick={() => navigate('/intake')}
+            onClick={startIntake}
             className="flex items-center gap-1.5 bg-[#1B6B3A] hover:bg-[#0F4023] text-white text-sm font-medium rounded-lg px-3 py-1.5 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -81,7 +102,7 @@ export function PatientDashboard() {
               Complete an intake interview and your brief will appear here.
             </p>
             <button
-              onClick={() => navigate('/intake')}
+              onClick={startIntake}
               className="bg-[#1B6B3A] hover:bg-[#0F4023] text-white text-sm font-semibold rounded-lg px-5 py-2 transition-colors"
             >
               Start your first intake

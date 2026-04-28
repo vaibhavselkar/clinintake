@@ -103,7 +103,8 @@ export async function patientTurn(req: Request, res: Response, next: NextFunctio
 
     let patientReply: string;
 
-    if (isManual) {
+    // patient_self means a real patient is typing — always use their reply directly
+    if (isManual || session.patientKey === 'patient_self') {
       patientReply = reply;
     } else {
       const lastAgentMsg = [...session.conversationHistory]

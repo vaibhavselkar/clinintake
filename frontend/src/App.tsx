@@ -34,8 +34,10 @@ export default function App() {
       {/* Smart root redirect based on role */}
       <Route path="/" element={<RootRedirect />} />
 
-      {/* Intake flow — accessible to both roles */}
-      <Route path="/intake" element={<ProtectedRoute><SetupPage /></ProtectedRoute>} />
+      {/* Clinician-only: patient scenario selector */}
+      <Route path="/intake" element={<ProtectedRoute requiredRole="clinician"><SetupPage /></ProtectedRoute>} />
+
+      {/* Shared interview + brief */}
       <Route path="/interview" element={<ProtectedRoute><InterviewPage /></ProtectedRoute>} />
       <Route path="/brief" element={<ProtectedRoute><BriefPage /></ProtectedRoute>} />
 

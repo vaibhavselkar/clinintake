@@ -224,6 +224,28 @@ export const PATIENTS: PatientProfile[] = [
   },
 ];
 
+// Generic profile used when a real patient starts their own intake
+const REAL_PATIENT_PROFILE: PatientProfile = {
+  key: 'patient_self',
+  name: 'Patient',
+  age: 0,
+  sex: 'male',
+  chiefComplaintHint: 'Your health concern',
+  personality: 'real patient — answer only what the agent asks, do not fabricate clinical details',
+  clinicalTruth: {
+    chiefComplaint: 'To be determined by the patient',
+    onset: 'To be determined', location: 'To be determined', duration: 'To be determined',
+    character: 'To be determined', aggravating: 'To be determined', alleviating: 'To be determined',
+    radiation: 'To be determined', timing: 'To be determined', severity: 'To be determined',
+    rosConstitutional: 'To be determined', rosCardiovascular: 'To be determined',
+    rosRespiratory: 'To be determined', rosGastrointestinal: 'To be determined',
+    rosNeurological: 'To be determined', rosMusculoskeletal: 'To be determined',
+    pmh: 'To be determined', medications: 'To be determined', allergies: 'To be determined',
+    familyHistory: 'To be determined', socialHistory: 'To be determined', redFlags: [],
+  },
+};
+
 export function getPatientByKey(key: string): PatientProfile | undefined {
+  if (key === 'patient_self') return REAL_PATIENT_PROFILE;
   return PATIENTS.find((p) => p.key === key);
 }
