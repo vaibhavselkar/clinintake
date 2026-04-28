@@ -5,6 +5,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   updateProfile,
 } from 'firebase/auth';
@@ -35,6 +37,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle redirect result on page load (Google redirect flow)
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          const existing = await fetchAppUser(result.user.uid);
+          if (!existing) {
+            const pendingRole = (sessionStorage.getItem('pendingRole') as UserRole) ?? 'patient';
+            sessionStorage.removeItem('pendingRole');
+            const profile: AppUser = {
+              uid: result.user.uid,
+              email: result.user.email ?? '',
+              displayName: result.user.displayName ?? '',
+              role: pendingRole,
+              createdAt: new Date().toISOString(),
+            };
+            await setDoc(doc(db, 'users', result.user.uid), { ...profile });
+            setAppUser(profile);
+          } else {
+            setAppUser(existing);
+          }
+        }
+      })
+      .catch(() => { /* redirect errors are non-fatal */ });
+
     const unsub = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
@@ -69,20 +95,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithGoogle(role: UserRole) {
-    const cred = await signInWithPopup(auth, googleProvider);
-    const existing = await fetchAppUser(cred.user.uid);
-    if (!existing) {
-      const profile: AppUser = {
-        uid: cred.user.uid,
-        email: cred.user.email ?? '',
-        displayName: cred.user.displayName ?? '',
-        role,
-        createdAt: new Date().toISOString(),
-      };
-      await setDoc(doc(db, 'users', cred.user.uid), { ...profile, createdAt: serverTimestamp() });
-      setAppUser(profile);
+    // Store role so redirect handler can pick it up after page reloads
+    sessionStorage.setItem('pendingRole', role);
+    const isLocalhost = window.location.hostname === 'localhost';
+    if (isLocalhost) {
+      // Popup works fine on localhost
+      const cred = await signInWithPopup(auth, googleProvider);
+      const existing = await fetchAppUser(cred.user.uid);
+      if (!existing) {
+        const profile: AppUser = {
+          uid: cred.user.uid,
+          email: cred.user.email ?? '',
+          displayName: cred.user.displayName ?? '',
+          role,
+          createdAt: new Date().toISOString(),
+        };
+        await setDoc(doc(db, 'users', cred.user.uid), { ...profile, createdAt: serverTimestamp() });
+        setAppUser(profile);
+      } else {
+        setAppUser(existing);
+      }
     } else {
-      setAppUser(existing);
+      // Use redirect on deployed environments (avoids COOP popup issues)
+      await signInWithRedirect(auth, googleProvider);
     }
   }
 
