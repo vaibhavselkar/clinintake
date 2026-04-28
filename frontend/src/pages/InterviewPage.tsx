@@ -23,7 +23,7 @@ export function InterviewPage() {
     if (initCalled.current) return;
     initCalled.current = true;
     if (!selectedPatient) {
-      navigate('/');
+      navigate('/intake');
       return;
     }
     if (!sessionInfo) {
@@ -43,7 +43,7 @@ export function InterviewPage() {
       {/* Top bar */}
       <div className="bg-white border-b border-[#C8E6D4] px-4 py-2 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="text-[#7A9E87] hover:text-[#1B6B3A] transition-colors">
+          <button onClick={() => navigate('/intake')} className="text-[#7A9E87] hover:text-[#1B6B3A] transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">

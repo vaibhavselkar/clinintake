@@ -10,6 +10,8 @@ import {
   runPatientTurn,
   synthesizeBrief,
 } from '../services/api.service';
+import { saveBrief } from '../services/firestore.service';
+import { auth } from '../lib/firebase';
 import { IntakePhase, PHASE_LABELS } from '../types/clinical.types';
 
 const AUTO_LOOP_DELAY_MS = 700;
@@ -177,12 +179,39 @@ export function useIntakeSession(): UseIntakeSessionReturn {
     try {
       const result = await synthesizeBrief(sessionId);
       briefStore.setBrief(result.brief);
+
+      // Auto-save to Firestore if user is signed in
+      const user = auth.currentUser;
+      const info = sessionStore.sessionInfo;
+      const intake = useIntakeStore.getState();
+      if (user && info) {
+        try {
+          await saveBrief({
+            sessionId,
+            patientUid: user.uid,
+            patientName: info.patientName,
+            patientAge: info.patientAge,
+            patientSex: info.patientSex,
+            chiefComplaint: result.brief.chiefComplaint,
+            hpi: result.brief.hpi,
+            clinicalFlags: result.brief.clinicalFlags,
+            oldcartsCount: intake.oldcartsCount,
+            rosCount: intake.rosCount,
+            turnCount: intake.turnCount,
+            brief: result.brief,
+            createdBy: user.uid,
+          });
+        } catch {
+          // Save failure is non-fatal — brief is still shown
+        }
+      }
+
       navigate('/brief');
     } catch (err) {
       briefStore.setError(err instanceof Error ? err.message : 'Failed to generate brief');
       intakeStore.setStatusText('');
     }
-  }, [sessionStore.sessionInfo?.sessionId, briefStore, intakeStore, voice, navigate]);
+  }, [sessionStore.sessionInfo, briefStore, intakeStore, voice, navigate]);
 
   return {
     initialize,
