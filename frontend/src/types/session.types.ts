@@ -1,4 +1,4 @@
-export type IntakeMode = 'auto' | 'manual';
+export type IntakeMode = 'auto' | 'manual' | 'chat';
 
 export interface SessionInfo {
   sessionId: string;

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useSpeechSynthesis } from './useSpeechSynthesis';
 import { useSpeechRecognition } from './useSpeechRecognition';
+import { IntakeMode } from '../types/session.types';
 
 export interface UseVoiceManagerReturn {
   speakAgent: (text: string) => Promise<void>;
@@ -7,7 +9,7 @@ export interface UseVoiceManagerReturn {
   stopSpeaking: () => void;
   isSpeaking: boolean;
   isSynthesisSupported: boolean;
-  startListening: () => void;
+  startListening: (onFinalResult?: (text: string) => void) => void;
   stopListening: () => void;
   transcript: string;
   interimTranscript: string;
@@ -21,20 +23,19 @@ export interface UseVoiceManagerReturn {
   setMuted: (v: boolean) => void;
 }
 
-import { useState } from 'react';
-
-export function useVoiceManager(): UseVoiceManagerReturn {
+export function useVoiceManager(mode: IntakeMode = 'auto'): UseVoiceManagerReturn {
   const tts = useSpeechSynthesis();
   const stt = useSpeechRecognition();
-  const [muted, setMuted] = useState(false);
+  // manual and chat modes: muted by default — agent doesn't read responses aloud
+  const [muted, setMuted] = useState(mode !== 'auto');
 
   async function speakAgent(text: string): Promise<void> {
-    if (muted) return;
+    if (muted || mode === 'chat') return;
     await tts.speak(text, 'agent');
   }
 
   async function speakPatient(text: string): Promise<void> {
-    if (muted) return;
+    if (muted || mode === 'chat') return;
     await tts.speak(text, 'patient');
   }
 

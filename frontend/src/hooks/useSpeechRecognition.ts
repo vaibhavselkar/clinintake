@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { isSpeechRecognitionSupported } from '../utils/voice.utils';
 
 interface UseSpeechRecognitionReturn {
-  startListening: () => void;
+  startListening: (onFinalResult?: (text: string) => void) => void;
   stopListening: () => void;
   transcript: string;
   interimTranscript: string;
@@ -67,7 +67,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     setInterimTranscript('');
   }, []);
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback((onFinalResult?: (text: string) => void) => {
     if (!isSupported) {
       setError('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
       return;
@@ -85,6 +85,8 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     recognition.interimResults = true;
     recognition.lang = 'en-US';
     recognitionRef.current = recognition;
+
+    const collectedFinal = { value: '' };
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -105,7 +107,10 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
           interim += result[0].transcript;
         }
       }
-      if (final) setTranscript((prev) => prev + final);
+      if (final) {
+        collectedFinal.value += final;
+        setTranscript((prev) => prev + final);
+      }
       setInterimTranscript(interim);
       silenceTimer.current = setTimeout(() => recognition.stop(), SILENCE_TIMEOUT_MS);
     };
@@ -122,6 +127,10 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
       clearSilenceTimer();
       setIsListening(false);
       setInterimTranscript('');
+      // Auto-submit when caller provided callback and we captured speech
+      if (onFinalResult && collectedFinal.value.trim()) {
+        onFinalResult(collectedFinal.value.trim());
+      }
     };
 
     recognition.start();

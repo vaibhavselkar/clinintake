@@ -31,7 +31,7 @@ export function useIntakeSession(): UseIntakeSessionReturn {
   const sessionStore = useSessionStore();
   const intakeStore = useIntakeStore();
   const briefStore = useBriefStore();
-  const voice = useVoiceManager();
+  const voice = useVoiceManager(sessionStore.mode);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

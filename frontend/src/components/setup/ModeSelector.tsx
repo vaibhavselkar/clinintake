@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Bot, Mic } from 'lucide-react';
+import { Bot, Mic, MessageSquare } from 'lucide-react';
 import { IntakeMode } from '../../types/session.types';
 
 interface ModeSelectorProps {
@@ -8,8 +8,9 @@ interface ModeSelectorProps {
 }
 
 const options: { value: IntakeMode; icon: typeof Bot; label: string; desc: string }[] = [
-  { value: 'auto', icon: Bot, label: 'Auto Simulation', desc: 'AI plays both agent and patient' },
-  { value: 'manual', icon: Mic, label: 'Manual Mode', desc: 'You speak as the patient' },
+  { value: 'auto', icon: Bot, label: 'Auto Simulation', desc: 'AI plays both sides' },
+  { value: 'manual', icon: Mic, label: 'Voice Mode', desc: 'Speak — sends automatically' },
+  { value: 'chat', icon: MessageSquare, label: 'Chat Only', desc: 'Type replies, no voice' },
 ];
 
 export function ModeSelector({ mode, onChange }: ModeSelectorProps) {
