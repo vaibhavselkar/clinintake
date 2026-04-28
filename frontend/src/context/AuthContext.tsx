@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Handle redirect result on page load (Google redirect flow)
     getRedirectResult(auth)
       .then(async (result) => {
+        console.log('[Auth] getRedirectResult:', result?.user?.email ?? 'no user');
         if (result?.user) {
           const existing = await fetchAppUser(result.user.uid);
           if (!existing) {
@@ -59,7 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       })
-      .catch(() => { /* redirect errors are non-fatal */ });
+      .catch((err) => {
+        console.error('[Auth] getRedirectResult error:', err?.code, err?.message);
+      });
 
     const unsub = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
