@@ -26,8 +26,8 @@ export interface UseVoiceManagerReturn {
 export function useVoiceManager(mode: IntakeMode = 'auto'): UseVoiceManagerReturn {
   const tts = useSpeechSynthesis();
   const stt = useSpeechRecognition();
-  // manual and chat modes: muted by default — agent doesn't read responses aloud
-  const [muted, setMuted] = useState(mode !== 'auto');
+  // chat mode: fully silent. auto + manual (voice): agent speaks
+  const [muted, setMuted] = useState(mode === 'chat');
 
   async function speakAgent(text: string): Promise<void> {
     if (muted || mode === 'chat') return;
@@ -35,7 +35,8 @@ export function useVoiceManager(mode: IntakeMode = 'auto'): UseVoiceManagerRetur
   }
 
   async function speakPatient(text: string): Promise<void> {
-    if (muted || mode === 'chat') return;
+    // In voice/manual mode patient speaks themselves — don't TTS their reply
+    if (muted || mode === 'chat' || mode === 'manual') return;
     await tts.speak(text, 'patient');
   }
 
