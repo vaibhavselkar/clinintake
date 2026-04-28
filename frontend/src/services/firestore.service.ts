@@ -62,19 +62,21 @@ export async function saveBrief(payload: SaveBriefPayload): Promise<string> {
 }
 
 export async function getAllBriefs(): Promise<SavedBrief[]> {
-  const q = query(collection(db, 'briefs'), orderBy('createdAt', 'desc'));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => toSavedBrief(d.id, d.data() as Record<string, unknown>));
+  // No orderBy to avoid needing an index — sort client-side
+  const snap = await getDocs(collection(db, 'briefs'));
+  const briefs = snap.docs.map((d) => toSavedBrief(d.id, d.data() as Record<string, unknown>));
+  return briefs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function getBriefsByPatient(patientUid: string): Promise<SavedBrief[]> {
+  // Simple where query — no composite index needed, sort client-side
   const q = query(
     collection(db, 'briefs'),
-    where('patientUid', '==', patientUid),
-    orderBy('createdAt', 'desc')
+    where('patientUid', '==', patientUid)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => toSavedBrief(d.id, d.data() as Record<string, unknown>));
+  const briefs = snap.docs.map((d) => toSavedBrief(d.id, d.data() as Record<string, unknown>));
+  return briefs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function getBriefById(id: string): Promise<SavedBrief | null> {
