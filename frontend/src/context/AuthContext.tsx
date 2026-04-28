@@ -5,8 +5,6 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   signOut,
   updateProfile,
 } from 'firebase/auth';
@@ -98,29 +96,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithGoogle(role: UserRole) {
-    // Store role so redirect handler can pick it up after page reloads
-    sessionStorage.setItem('pendingRole', role);
-    const isLocalhost = window.location.hostname === 'localhost';
-    if (isLocalhost) {
-      // Popup works fine on localhost
-      const cred = await signInWithPopup(auth, googleProvider);
-      const existing = await fetchAppUser(cred.user.uid);
-      if (!existing) {
-        const profile: AppUser = {
-          uid: cred.user.uid,
-          email: cred.user.email ?? '',
-          displayName: cred.user.displayName ?? '',
-          role,
-          createdAt: new Date().toISOString(),
-        };
-        await setDoc(doc(db, 'users', cred.user.uid), { ...profile, createdAt: serverTimestamp() });
-        setAppUser(profile);
-      } else {
-        setAppUser(existing);
-      }
+    const cred = await signInWithPopup(auth, googleProvider);
+    const existing = await fetchAppUser(cred.user.uid);
+    if (!existing) {
+      const profile: AppUser = {
+        uid: cred.user.uid,
+        email: cred.user.email ?? '',
+        displayName: cred.user.displayName ?? '',
+        role,
+        createdAt: new Date().toISOString(),
+      };
+      await setDoc(doc(db, 'users', cred.user.uid), { ...profile, createdAt: serverTimestamp() });
+      setAppUser(profile);
     } else {
-      // Use redirect on deployed environments (avoids COOP popup issues)
-      await signInWithRedirect(auth, googleProvider);
+      setAppUser(existing);
     }
   }
 
