@@ -35,33 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle redirect result on page load (Google redirect flow)
-    getRedirectResult(auth)
-      .then(async (result) => {
-        console.log('[Auth] getRedirectResult:', result?.user?.email ?? 'no user');
-        if (result?.user) {
-          const existing = await fetchAppUser(result.user.uid);
-          if (!existing) {
-            const pendingRole = (sessionStorage.getItem('pendingRole') as UserRole) ?? 'patient';
-            sessionStorage.removeItem('pendingRole');
-            const profile: AppUser = {
-              uid: result.user.uid,
-              email: result.user.email ?? '',
-              displayName: result.user.displayName ?? '',
-              role: pendingRole,
-              createdAt: new Date().toISOString(),
-            };
-            await setDoc(doc(db, 'users', result.user.uid), { ...profile });
-            setAppUser(profile);
-          } else {
-            setAppUser(existing);
-          }
-        }
-      })
-      .catch((err) => {
-        console.error('[Auth] getRedirectResult error:', err?.code, err?.message);
-      });
-
     const unsub = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
