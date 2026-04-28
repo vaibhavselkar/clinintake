@@ -53,7 +53,7 @@ export function ClinicianDashboard() {
             <span>{appUser?.displayName}</span>
           </div>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/intake')}
             className="flex items-center gap-1.5 bg-[#1B6B3A] hover:bg-[#0F4023] text-white text-sm font-medium rounded-lg px-3 py-1.5 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />

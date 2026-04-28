@@ -45,7 +45,7 @@ export function PatientDashboard() {
             <span>{appUser?.displayName}</span>
           </div>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/intake')}
             className="flex items-center gap-1.5 bg-[#1B6B3A] hover:bg-[#0F4023] text-white text-sm font-medium rounded-lg px-3 py-1.5 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -81,7 +81,7 @@ export function PatientDashboard() {
               Complete an intake interview and your brief will appear here.
             </p>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/intake')}
               className="bg-[#1B6B3A] hover:bg-[#0F4023] text-white text-sm font-semibold rounded-lg px-5 py-2 transition-colors"
             >
               Start your first intake
