@@ -12,25 +12,36 @@ interface UseSpeechSynthesisReturn {
 
 export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [rate, setRate] = useState(0.9);
   const isSupported = isSpeechSynthesisSupported();
-  const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Lock voices in refs once loaded — prevents voice switching between utterances
+  const agentVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  const patientVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  const voicesLockedRef = useRef(false);
+  const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isSupported) return;
 
-    function loadVoices() {
-      setVoices(window.speechSynthesis.getVoices());
+    function lockVoices() {
+      const available = window.speechSynthesis.getVoices();
+      if (available.length === 0 || voicesLockedRef.current) return;
+      agentVoiceRef.current = selectVoice(available, 'agent');
+      patientVoiceRef.current = selectVoice(available, 'patient');
+      voicesLockedRef.current = true;
     }
 
-    loadVoices();
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+    lockVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', lockVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', lockVoices);
   }, [isSupported]);
 
   const stop = useCallback(() => {
     if (!isSupported) return;
+    if (keepAliveRef.current) clearInterval(keepAliveRef.current);
+    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
   }, [isSupported]);
@@ -40,57 +51,61 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
       return new Promise((resolve) => {
         if (!isSupported) { resolve(); return; }
 
+        // Clear any previous timers
+        if (keepAliveRef.current) clearInterval(keepAliveRef.current);
+        if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+
         window.speechSynthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
-        const selectedVoice = selectVoice(voices, voiceType);
-        if (selectedVoice) utterance.voice = selectedVoice;
 
-        utterance.rate = voiceType === 'agent' ? rate : rate * 1.1;
+        // Use locked voices — same voice every time
+        const voice = voiceType === 'agent' ? agentVoiceRef.current : patientVoiceRef.current;
+        if (voice) utterance.voice = voice;
+
+        utterance.rate = voiceType === 'agent' ? rate : rate * 1.05;
         utterance.pitch = voiceType === 'agent' ? 1.0 : 0.95;
         utterance.volume = 1.0;
 
-        // Safety timeout — Chrome sometimes stalls onend for long utterances
-        // Estimate ~80ms per word, minimum 4s, maximum 30s
-        const wordCount = text.split(' ').length;
-        const timeoutMs = Math.min(Math.max(wordCount * 80 / utterance.rate, 4000), 30000);
-        const safetyTimer = setTimeout(() => {
-          window.speechSynthesis.cancel();
-          setIsSpeaking(false);
-          currentUtterance.current = null;
-          resolve();
-        }, timeoutMs);
-
+        let resolved = false;
         function finish() {
-          clearTimeout(safetyTimer);
+          if (resolved) return;
+          resolved = true;
+          if (keepAliveRef.current) clearInterval(keepAliveRef.current);
+          if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+          keepAliveRef.current = null;
+          safetyTimerRef.current = null;
           setIsSpeaking(false);
-          currentUtterance.current = null;
           resolve();
         }
 
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = finish;
-        utterance.onerror = finish;
+        utterance.onerror = (e) => {
+          // 'interrupted' fires when we cancel() for the next utterance — not an error
+          if ((e as SpeechSynthesisErrorEvent).error === 'interrupted') return;
+          finish();
+        };
 
-        currentUtterance.current = utterance;
-        window.speechSynthesis.speak(utterance);
+        // Safety timeout based on text length — resolves if onend never fires
+        const wordCount = text.trim().split(/\s+/).length;
+        const estimatedMs = Math.max((wordCount / rate) * 500, 5000);
+        safetyTimerRef.current = setTimeout(finish, estimatedMs + 3000);
 
-        // Chrome bug: speechSynthesis pauses after ~15s in background tabs
-        // keepalive interval pokes it every 10s
-        const keepAlive = setInterval(() => {
+        // Chrome bug: pauses after ~15s in background tabs — keep poking it
+        keepAliveRef.current = setInterval(() => {
           if (!window.speechSynthesis.speaking) {
-            clearInterval(keepAlive);
+            finish();
             return;
           }
           window.speechSynthesis.pause();
           window.speechSynthesis.resume();
-        }, 10000);
+        }, 8000);
 
-        utterance.onend = () => { clearInterval(keepAlive); finish(); };
-        utterance.onerror = () => { clearInterval(keepAlive); finish(); };
+        window.speechSynthesis.speak(utterance);
       });
     },
-    [isSupported, voices, rate]
+    [isSupported, rate]  // voices are in refs — not in deps, so speak never recreates
   );
 
   return { speak, stop, isSpeaking, isSupported, rate, setRate };
