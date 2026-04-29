@@ -31,7 +31,6 @@ export async function createSession(req: Request, res: Response, next: NextFunct
       return;
     }
 
-    // For real patients (patient_self), use their actual name from the frontend
     const resolvedProfile = patientDisplayName
       ? { ...profile, name: patientDisplayName }
       : profile;
@@ -49,7 +48,7 @@ export async function createSession(req: Request, res: Response, next: NextFunct
       lastActivity: new Date(),
     };
 
-    sessionStore.set(session);
+    await sessionStore.set(session);
     logger.info(`Session created: ${session.id} for patient ${resolvedProfile.name}`);
 
     res.status(201).json({
@@ -67,7 +66,7 @@ export async function createSession(req: Request, res: Response, next: NextFunct
 
 export async function agentTurn(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const session = sessionStore.get(req.params.id);
+    const session = await sessionStore.get(req.params.id);
     if (!session) {
       next(createError('Session not found or expired', 404));
       return;
@@ -83,7 +82,7 @@ export async function agentTurn(req: Request, res: Response, next: NextFunction)
     session.conversationHistory.push(agentMessage);
     session.phase = result.nextPhase;
     session.turnCount += 1;
-    sessionStore.set(session);
+    await sessionStore.set(session);
 
     res.json({
       response: result.response,
@@ -98,7 +97,7 @@ export async function agentTurn(req: Request, res: Response, next: NextFunction)
 
 export async function patientTurn(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const session = sessionStore.get(req.params.id);
+    const session = await sessionStore.get(req.params.id);
     if (!session) {
       next(createError('Session not found or expired', 404));
       return;
@@ -108,7 +107,6 @@ export async function patientTurn(req: Request, res: Response, next: NextFunctio
 
     let patientReply: string;
 
-    // patient_self means a real patient is typing — always use their reply directly
     if (isManual || session.patientKey === 'patient_self') {
       patientReply = reply;
     } else {
@@ -144,7 +142,7 @@ export async function patientTurn(req: Request, res: Response, next: NextFunctio
     );
     session.collectedData = mergeExtractionIntoSession(session.collectedData, extracted);
 
-    sessionStore.set(session);
+    await sessionStore.set(session);
 
     res.json({
       patientReply,
@@ -160,7 +158,7 @@ export async function patientTurn(req: Request, res: Response, next: NextFunctio
 
 export async function getSessionState(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const session = sessionStore.get(req.params.id);
+    const session = await sessionStore.get(req.params.id);
     if (!session) {
       next(createError('Session not found or expired', 404));
       return;
@@ -182,7 +180,7 @@ export async function getSessionState(req: Request, res: Response, next: NextFun
 
 export async function synthesizeBrief(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const session = sessionStore.get(req.params.id);
+    const session = await sessionStore.get(req.params.id);
     if (!session) {
       next(createError('Session not found or expired', 404));
       return;
@@ -197,7 +195,7 @@ export async function synthesizeBrief(req: Request, res: Response, next: NextFun
 
 export async function getTranscript(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const session = sessionStore.get(req.params.id);
+    const session = await sessionStore.get(req.params.id);
     if (!session) {
       next(createError('Session not found or expired', 404));
       return;
@@ -214,7 +212,7 @@ export async function getTranscript(req: Request, res: Response, next: NextFunct
 
 export async function deleteSession(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const deleted = sessionStore.delete(req.params.id);
+    const deleted = await sessionStore.delete(req.params.id);
     if (!deleted) {
       next(createError('Session not found', 404));
       return;

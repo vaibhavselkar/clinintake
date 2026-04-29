@@ -1,47 +1,66 @@
+import { adminDb } from '../config/firebase';
 import { IntakeSession } from '../models/session.model';
-import { config } from '../config/env';
 import { logger } from './logger';
 
-const TTL_MS = config.sessionTtlHours * 60 * 60 * 1000;
+const COLLECTION = 'intake_sessions';
 
-const store = new Map<string, IntakeSession>();
+function serialize(session: IntakeSession): Record<string, unknown> {
+  return {
+    ...session,
+    createdAt: session.createdAt.toISOString(),
+    lastActivity: session.lastActivity.toISOString(),
+  };
+}
 
-setInterval(() => {
-  const now = Date.now();
-  let expired = 0;
-  for (const [id, session] of store) {
-    if (now - session.lastActivity.getTime() > TTL_MS) {
-      store.delete(id);
-      expired++;
-    }
-  }
-  if (expired > 0) {
-    logger.info(`Session cleanup: removed ${expired} expired session(s). Active: ${store.size}`);
-  }
-}, 15 * 60 * 1000); // run every 15 minutes
+function deserialize(data: Record<string, unknown>): IntakeSession {
+  return {
+    ...data,
+    createdAt: new Date(data.createdAt as string),
+    lastActivity: new Date(data.lastActivity as string),
+  } as IntakeSession;
+}
 
 export const sessionStore = {
-  set(session: IntakeSession): void {
-    store.set(session.id, session);
-  },
-
-  get(id: string): IntakeSession | undefined {
-    const session = store.get(id);
-    if (session) {
-      session.lastActivity = new Date();
+  async set(session: IntakeSession): Promise<void> {
+    try {
+      await adminDb.collection(COLLECTION).doc(session.id).set(serialize(session));
+    } catch (err) {
+      logger.error('sessionStore.set failed:', err);
+      throw err;
     }
-    return session;
   },
 
-  delete(id: string): boolean {
-    return store.delete(id);
+  async get(id: string): Promise<IntakeSession | undefined> {
+    try {
+      const doc = await adminDb.collection(COLLECTION).doc(id).get();
+      if (!doc.exists) return undefined;
+      const session = deserialize(doc.data() as Record<string, unknown>);
+      session.lastActivity = new Date();
+      // Update lastActivity without awaiting to keep reads fast
+      adminDb.collection(COLLECTION).doc(id).update({ lastActivity: session.lastActivity.toISOString() }).catch(() => {});
+      return session;
+    } catch (err) {
+      logger.error('sessionStore.get failed:', err);
+      return undefined;
+    }
   },
 
-  has(id: string): boolean {
-    return store.has(id);
+  async delete(id: string): Promise<boolean> {
+    try {
+      await adminDb.collection(COLLECTION).doc(id).delete();
+      return true;
+    } catch {
+      return false;
+    }
   },
 
-  size(): number {
-    return store.size;
+  async has(id: string): Promise<boolean> {
+    const doc = await adminDb.collection(COLLECTION).doc(id).get();
+    return doc.exists;
+  },
+
+  async size(): Promise<number> {
+    const snap = await adminDb.collection(COLLECTION).count().get();
+    return snap.data().count;
   },
 };

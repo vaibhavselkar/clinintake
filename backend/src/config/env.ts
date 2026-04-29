@@ -15,12 +15,13 @@ function optionalEnv(key: string, fallback: string): string {
 }
 
 export const config = {
-  port: parseInt(optionalEnv('PORT', '3001'), 10),
+  port: parseInt(optionalEnv('PORT', '3002'), 10),
   groqApiKey: requireEnv('GROQ_API_KEY'),
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
   corsOrigin: optionalEnv('CORS_ORIGIN', 'http://localhost:5173'),
   sessionTtlHours: parseInt(optionalEnv('SESSION_TTL_HOURS', '2'), 10),
   logLevel: optionalEnv('LOG_LEVEL', 'info'),
+  firebaseServiceAccount: requireEnv('FIREBASE_SERVICE_ACCOUNT'),
 } as const;
 
 export type Config = typeof config;

@@ -3,12 +3,9 @@ import { sessionStore } from '../utils/session.store';
 
 const router = Router();
 
-router.get('/', (_req: Request, res: Response) => {
-  res.json({
-    status: 'ok',
-    activeSessions: sessionStore.size(),
-    timestamp: new Date().toISOString(),
-  });
+router.get('/', async (_req: Request, res: Response) => {
+  const activeSessions = await sessionStore.size();
+  res.json({ status: 'ok', activeSessions, timestamp: new Date().toISOString() });
 });
 
 export default router;
