@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Cross, ArrowLeft } from 'lucide-react';
 import { useSessionStore } from '../store/session.store';
