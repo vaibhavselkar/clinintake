@@ -42,7 +42,7 @@ export function PatientDashboard() {
       chiefComplaintHint: 'Your health concern',
       personality: 'real patient',
     });
-    setMode('chat');
+    setMode('manual');
     navigate('/interview');
   }
 
