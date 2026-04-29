@@ -12,6 +12,8 @@ import {
 } from '../services/api.service';
 import { saveBrief } from '../services/firestore.service';
 import { auth } from '../lib/firebase';
+import { db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { IntakePhase, PHASE_LABELS } from '../types/clinical.types';
 
 const AUTO_LOOP_DELAY_MS = 700;
@@ -127,7 +129,14 @@ export function useIntakeSession(): UseIntakeSessionReturn {
     briefStore.reset();
 
     try {
-      const displayName = sessionStore.selectedPatient?.name;
+      // For real patients, fetch their display name directly from Firestore
+      let displayName = sessionStore.selectedPatient?.name;
+      if (patientKey === 'patient_self' && auth.currentUser) {
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        if (userDoc.exists()) {
+          displayName = (userDoc.data() as { displayName?: string }).displayName ?? displayName;
+        }
+      }
       const session = await createSession(patientKey, displayName);
       sessionIdRef.current = session.sessionId;
       sessionStore.setSessionInfo({
