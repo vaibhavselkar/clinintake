@@ -10,10 +10,11 @@ import {
   runPatientTurn,
   synthesizeBrief,
 } from '../services/api.service';
-import { saveBrief } from '../services/firestore.service';
+import { saveBrief, getBriefsByPatient } from '../services/firestore.service';
 import { auth } from '../lib/firebase';
 import { db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { PriorVisitContext } from '../services/api.service';
 import { IntakePhase, PHASE_LABELS } from '../types/clinical.types';
 
 const AUTO_LOOP_DELAY_MS = 700;
@@ -129,15 +130,38 @@ export function useIntakeSession(): UseIntakeSessionReturn {
     briefStore.reset();
 
     try {
-      // For real patients, fetch their display name directly from Firestore
+      // For real patients, fetch display name + prior visit context from Firestore
       let displayName = sessionStore.selectedPatient?.name;
+      let priorContext: PriorVisitContext | undefined;
+
       if (patientKey === 'patient_self' && auth.currentUser) {
-        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        const uid = auth.currentUser.uid;
+
+        // Get display name
+        const userDoc = await getDoc(doc(db, 'users', uid));
         if (userDoc.exists()) {
           displayName = (userDoc.data() as { displayName?: string }).displayName ?? displayName;
         }
+
+        // Get most recent prior brief
+        const priorBriefs = await getBriefsByPatient(uid);
+        if (priorBriefs.length > 0) {
+          const last = priorBriefs[0]; // already sorted newest first
+          priorContext = {
+            visitDate: new Date(last.createdAt).toLocaleDateString('en-GB', {
+              day: 'numeric', month: 'long', year: 'numeric',
+            }),
+            chiefComplaint: last.brief.chiefComplaint,
+            hpi: last.brief.hpi,
+            pmh: last.brief.pmh,
+            medications: last.brief.medications,
+            allergies: last.brief.allergies,
+            clinicalFlags: last.brief.clinicalFlags,
+          };
+        }
       }
-      const session = await createSession(patientKey, displayName);
+
+      const session = await createSession(patientKey, displayName, priorContext);
       sessionIdRef.current = session.sessionId;
       sessionStore.setSessionInfo({
         sessionId: session.sessionId,

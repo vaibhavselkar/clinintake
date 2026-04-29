@@ -26,6 +26,16 @@ export interface Message {
   timestamp: string;
 }
 
+export interface PriorVisitContext {
+  visitDate: string;
+  chiefComplaint: string;
+  hpi: string;
+  pmh: string;
+  medications: string;
+  allergies: string;
+  clinicalFlags: string[];
+}
+
 export interface IntakeSession {
   id: string;
   patientKey: string;
@@ -35,6 +45,7 @@ export interface IntakeSession {
   conversationHistory: Message[];
   patientHistory: Message[];
   collectedData: CollectedClinicalData;
+  priorContext: PriorVisitContext | null;
   createdAt: Date;
   lastActivity: Date;
 }

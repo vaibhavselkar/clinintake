@@ -2,7 +2,7 @@ import { IntakeSession } from '../models/session.model';
 import { OLDCARTS_FIELDS, OLDCARTS_LABELS, ROS_LABELS, ROS_SYSTEMS } from '../models/clinical.model';
 
 export function buildAgentSystemPrompt(session: IntakeSession): string {
-  const { phase, collectedData, profile, turnCount } = session;
+  const { phase, collectedData, profile, turnCount, priorContext } = session;
 
   const oldcartsStatus = OLDCARTS_FIELDS.map((f) => {
     const val = collectedData.oldcarts[f];
@@ -20,9 +20,27 @@ export function buildAgentSystemPrompt(session: IntakeSession): string {
     `  Allergies: ${collectedData.allergies ?? '[NEEDED]'}`,
   ].join('\n');
 
-  return `You are a clinical intake nurse named "RN Jordan" conducting a structured pre-visit intake interview.
-Your patient today is ${profile.name}, a ${profile.age}-year-old ${profile.sex}.
+  const priorVisitBlock = priorContext ? `
+PRIOR VISIT CONTEXT (from ${priorContext.visitDate}):
+This patient has been seen before. Use this information to avoid repeating questions unnecessarily.
+- Previous chief complaint: ${priorContext.chiefComplaint}
+- Previous HPI summary: ${priorContext.hpi}
+- Known PMH: ${priorContext.pmh}
+- Known medications: ${priorContext.medications}
+- Known allergies: ${priorContext.allergies}
+${priorContext.clinicalFlags.length > 0 ? `- Prior clinical flags: ${priorContext.clinicalFlags.join('; ')}` : ''}
 
+RETURNING PATIENT RULES:
+- Greet them as a returning patient. Acknowledge you have their previous visit notes.
+- For PMH/medications/allergies: confirm if anything has changed rather than asking from scratch.
+- Focus questions on what is NEW or CHANGED since the last visit.
+- If the chief complaint is the same as last time, ask specifically how it has evolved.
+- If it is a new complaint, proceed normally but skip re-collecting known PMH unless confirming changes.
+` : '';
+
+  return `You are a clinical intake nurse named "RN Jordan" conducting a structured pre-visit intake interview.
+Your patient today is ${profile.name}${profile.age > 0 ? `, a ${profile.age}-year-old ${profile.sex}` : ''}.
+${priorVisitBlock}
 CURRENT PHASE: ${phase}
 TURN COUNT: ${turnCount}
 CHIEF COMPLAINT COLLECTED: ${collectedData.chiefComplaint ?? 'Not yet'}

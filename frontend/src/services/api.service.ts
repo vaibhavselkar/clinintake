@@ -65,8 +65,26 @@ export interface TranscriptResponse {
 
 // --- API functions ---
 
-export async function createSession(patientKey: string, patientDisplayName?: string): Promise<CreateSessionResponse> {
-  const res = await apiClient.post<CreateSessionResponse>('/api/intake/session', { patientKey, patientDisplayName });
+export interface PriorVisitContext {
+  visitDate: string;
+  chiefComplaint: string;
+  hpi: string;
+  pmh: string;
+  medications: string;
+  allergies: string;
+  clinicalFlags: string[];
+}
+
+export async function createSession(
+  patientKey: string,
+  patientDisplayName?: string,
+  priorContext?: PriorVisitContext
+): Promise<CreateSessionResponse> {
+  const res = await apiClient.post<CreateSessionResponse>('/api/intake/session', {
+    patientKey,
+    patientDisplayName,
+    priorContext,
+  });
   return res.data;
 }
 

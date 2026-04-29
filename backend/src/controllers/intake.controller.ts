@@ -23,7 +23,11 @@ function toGroqMessages(messages: Message[]): ChatMessage[] {
 
 export async function createSession(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { patientKey, patientDisplayName } = req.body as { patientKey: string; patientDisplayName?: string };
+    const { patientKey, patientDisplayName, priorContext } = req.body as {
+      patientKey: string;
+      patientDisplayName?: string;
+      priorContext?: import('../models/session.model').PriorVisitContext;
+    };
     const profile = getPatientByKey(patientKey);
 
     if (!profile) {
@@ -44,6 +48,7 @@ export async function createSession(req: Request, res: Response, next: NextFunct
       conversationHistory: [],
       patientHistory: [],
       collectedData: emptyCollectedData(),
+      priorContext: priorContext ?? null,
       createdAt: new Date(),
       lastActivity: new Date(),
     };
