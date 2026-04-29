@@ -102,39 +102,61 @@ export function VoiceControls({
         </div>
       </div>
 
-      {/* Manual voice mode — tap mic, auto-submits on silence */}
+      {/* Manual voice mode — mic + text input always visible */}
       {isVoiceMode && (
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-2 items-center">
+          {/* Mic button */}
           <button
             onClick={handleMicClick}
             disabled={isListening || isProcessing}
             className={clsx(
-              'w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all shadow-sm',
+              'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all shadow-sm',
               isListening
                 ? 'bg-red-500 text-white animate-pulse scale-110'
                 : 'bg-[#1B6B3A] text-white hover:bg-[#0F4023] active:scale-95',
               isProcessing && 'opacity-50 cursor-not-allowed'
             )}
           >
-            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </button>
 
-          <div className="flex-1 min-w-0">
-            {isListening ? (
-              <div className="px-3 py-2 bg-[#E8F5EE] rounded-lg text-sm text-[#0D2818] min-h-[38px]">
-                {interimTranscript || <span className="text-[#7A9E87] italic">Listening…</span>}
-              </div>
-            ) : transcript ? (
-              <div className="px-3 py-2 bg-[#F0FAF4] border border-[#C8E6D4] rounded-lg text-sm text-[#0D2818]">
-                <span className="text-[#7A9E87] text-xs block mb-0.5">Sending:</span>
-                {transcript}
-              </div>
-            ) : (
-              <p className="text-xs text-[#7A9E87] pl-1">
-                Tap the mic to speak — sends automatically when you stop
-              </p>
+          {/* Text input — always visible, pre-filled with speech transcript */}
+          <input
+            type="text"
+            value={isListening ? interimTranscript : chatInput || transcript}
+            onChange={(e) => !isListening && setChatInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const text = (chatInput || transcript).trim();
+                if (text && !isProcessing) {
+                  setChatInput('');
+                  onSubmitManual(text);
+                }
+              }
+            }}
+            placeholder={isListening ? 'Listening…' : 'Speak or type your reply…'}
+            disabled={isProcessing}
+            className={clsx(
+              'flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1B6B3A] text-[#0D2818] placeholder-[#7A9E87]',
+              isListening ? 'bg-[#E8F5EE] border-[#1B6B3A]' : 'bg-white border-[#C8E6D4]',
+              isProcessing && 'opacity-50'
             )}
-          </div>
+            readOnly={isListening}
+          />
+
+          {/* Send button */}
+          <button
+            onClick={() => {
+              const text = (chatInput || transcript).trim();
+              if (!text || isProcessing) return;
+              setChatInput('');
+              onSubmitManual(text);
+            }}
+            disabled={!(chatInput || transcript).trim() || isProcessing || isListening}
+            className="w-9 h-9 bg-[#1B6B3A] hover:bg-[#0F4023] text-white rounded-lg flex items-center justify-center flex-shrink-0 disabled:opacity-40 transition-colors"
+          >
+            <Send className="w-4 h-4" />
+          </button>
         </div>
       )}
 
