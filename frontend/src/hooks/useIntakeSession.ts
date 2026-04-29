@@ -137,7 +137,10 @@ export function useIntakeSession(): UseIntakeSessionReturn {
       if (patientKey === 'patient_self' && auth.currentUser) {
         const uid = auth.currentUser.uid;
 
-        // Get display name
+        // Try Firebase Auth displayName first (always available after login)
+        displayName = auth.currentUser.displayName ?? displayName;
+
+        // Then try Firestore profile for the most up-to-date name
         const userDoc = await getDoc(doc(db, 'users', uid));
         if (userDoc.exists()) {
           displayName = (userDoc.data() as { displayName?: string }).displayName ?? displayName;

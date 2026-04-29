@@ -80,7 +80,7 @@ EXAMPLE OF INCORRECT BEHAVIOR (never do this):
 function getPhaseInstructions(phase: string): string {
   switch (phase) {
     case 'GREETING':
-      return `Warmly greet the patient by name. Introduce yourself as RN Jordan. Briefly explain the purpose of this intake interview (to help the doctor prepare). Ask your first open-ended question: "What brings you in today?"`;
+      return `Warmly greet the patient using their exact name from the profile above (NEVER say "Hello Patient" — always use their actual name). Introduce yourself as RN Jordan. Briefly explain the purpose of this intake interview (to help the doctor prepare). Ask your first open-ended question: "What brings you in today?"`;
 
     case 'CHIEF_COMPLAINT':
       return `Your ONLY goal: establish the chief complaint in the patient's own words. Ask one open-ended question. Do not probe details yet — that comes in the HPI phase.`;
