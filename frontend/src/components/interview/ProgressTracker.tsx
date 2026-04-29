@@ -20,7 +20,7 @@ export function ProgressTracker({
   const canGenerate = oldcartsCount >= 6;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-[#C8E6D4] flex items-center gap-3">
         <ProgressRing percent={percent} size={56} label="done" />
@@ -30,7 +30,7 @@ export function ProgressTracker({
         </div>
       </div>
 
-      <div className="p-4 space-y-5 flex-1">
+      <div className="p-4 space-y-5 flex-1 overflow-y-auto">
         {/* OLDCARTS */}
         <div>
           <p className="text-xs font-semibold text-[#3D6B50] uppercase tracking-wide mb-2">

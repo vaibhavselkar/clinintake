@@ -23,7 +23,7 @@ function toGroqMessages(messages: Message[]): ChatMessage[] {
 
 export async function createSession(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { patientKey } = req.body as { patientKey: string };
+    const { patientKey, patientDisplayName } = req.body as { patientKey: string; patientDisplayName?: string };
     const profile = getPatientByKey(patientKey);
 
     if (!profile) {
@@ -31,10 +31,15 @@ export async function createSession(req: Request, res: Response, next: NextFunct
       return;
     }
 
+    // For real patients (patient_self), use their actual name from the frontend
+    const resolvedProfile = patientDisplayName
+      ? { ...profile, name: patientDisplayName }
+      : profile;
+
     const session: IntakeSession = {
       id: uuidv4(),
       patientKey,
-      profile,
+      profile: resolvedProfile,
       phase: 'GREETING',
       turnCount: 0,
       conversationHistory: [],
@@ -45,14 +50,14 @@ export async function createSession(req: Request, res: Response, next: NextFunct
     };
 
     sessionStore.set(session);
-    logger.info(`Session created: ${session.id} for patient ${profile.name}`);
+    logger.info(`Session created: ${session.id} for patient ${resolvedProfile.name}`);
 
     res.status(201).json({
       sessionId: session.id,
-      patientName: profile.name,
-      patientAge: profile.age,
-      patientSex: profile.sex,
-      chiefComplaintHint: profile.chiefComplaintHint,
+      patientName: resolvedProfile.name,
+      patientAge: resolvedProfile.age,
+      patientSex: resolvedProfile.sex,
+      chiefComplaintHint: resolvedProfile.chiefComplaintHint,
       phase: session.phase,
     });
   } catch (err) {

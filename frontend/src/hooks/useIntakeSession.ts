@@ -127,7 +127,8 @@ export function useIntakeSession(): UseIntakeSessionReturn {
     briefStore.reset();
 
     try {
-      const session = await createSession(patientKey);
+      const displayName = sessionStore.selectedPatient?.name;
+      const session = await createSession(patientKey, displayName);
       sessionIdRef.current = session.sessionId;
       sessionStore.setSessionInfo({
         sessionId: session.sessionId,

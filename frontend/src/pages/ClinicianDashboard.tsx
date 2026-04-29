@@ -123,9 +123,14 @@ export function ClinicianDashboard() {
                     <p className="text-xs text-[#7A9E87] mt-1.5 line-clamp-2">{b.hpi}</p>
                   </div>
                   <div className="ml-6 text-right shrink-0">
-                    <div className="text-xs text-[#7A9E87] mb-2">
+                    <div className="text-xs text-[#7A9E87] mb-1">
                       {new Date(b.createdAt).toLocaleDateString('en-GB', {
                         day: 'numeric', month: 'short', year: 'numeric',
+                      })}
+                    </div>
+                    <div className="text-xs text-[#7A9E87] mb-2">
+                      {new Date(b.createdAt).toLocaleTimeString('en-GB', {
+                        hour: '2-digit', minute: '2-digit',
                       })}
                     </div>
                     <div className="flex gap-2 justify-end text-xs">
