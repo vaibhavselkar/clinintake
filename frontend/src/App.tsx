@@ -29,12 +29,10 @@ export default function App() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<RootRedirect />} />
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-
-      {/* Smart root redirect based on role */}
-      <Route path="/" element={<RootRedirect />} />
 
       {/* Clinician-only: patient scenario selector */}
       <Route path="/intake" element={<ProtectedRoute requiredRole="clinician"><SetupPage /></ProtectedRoute>} />

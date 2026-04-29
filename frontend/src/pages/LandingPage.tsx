@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import {
-  Mic, FileText, Brain, Shield, Clock, ChevronRight,
+  Mic, FileText, Brain, Shield, ChevronRight,
   CheckCircle, Activity, Users, Stethoscope, AlertTriangle, ArrowRight
 } from 'lucide-react';
 
