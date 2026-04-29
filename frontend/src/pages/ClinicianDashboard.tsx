@@ -108,7 +108,7 @@ export function ClinicianDashboard() {
                         {b.patientName}
                       </span>
                       <span className="text-xs text-[#7A9E87]">
-                        {b.patientAge}y · {b.patientSex}
+                        {b.patientAge > 0 ? `${b.patientAge}y · ` : ''}{b.patientSex}
                       </span>
                       {b.clinicalFlags.length > 0 && (
                         <span className="flex items-center gap-1 text-xs text-[#991B1B] bg-[#FEF2F2] px-2 py-0.5 rounded-full">

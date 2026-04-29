@@ -31,7 +31,7 @@ export function BriefHeader({ patientName, patientAge, patientSex, generatedAt, 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-1">
         {[
           { label: 'Patient', value: patientName },
-          { label: 'Demographics', value: `${patientAge}yo ${patientSex === 'male' ? 'Male' : 'Female'}` },
+          { label: 'Demographics', value: `${patientAge > 0 ? `${patientAge}yo ` : ''}${patientSex === 'male' ? 'Male' : 'Female'}` },
           { label: 'Date', value: formatDate(generatedAt) },
           { label: 'Interview Turns', value: String(turnCount) },
         ].map(({ label, value }) => (
