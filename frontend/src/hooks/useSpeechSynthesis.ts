@@ -38,10 +38,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
   const speak = useCallback(
     (text: string, voiceType: VoiceType): Promise<void> => {
       return new Promise((resolve) => {
-        if (!isSupported) {
-          resolve();
-          return;
-        }
+        if (!isSupported) { resolve(); return; }
 
         window.speechSynthesis.cancel();
 
@@ -49,30 +46,48 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
         const selectedVoice = selectVoice(voices, voiceType);
         if (selectedVoice) utterance.voice = selectedVoice;
 
-        if (voiceType === 'agent') {
-          utterance.rate = rate;
-          utterance.pitch = 1.0;
-          utterance.volume = 1.0;
-        } else {
-          utterance.rate = rate * 1.1;
-          utterance.pitch = 0.95;
-          utterance.volume = 1.0;
+        utterance.rate = voiceType === 'agent' ? rate : rate * 1.1;
+        utterance.pitch = voiceType === 'agent' ? 1.0 : 0.95;
+        utterance.volume = 1.0;
+
+        // Safety timeout — Chrome sometimes stalls onend for long utterances
+        // Estimate ~80ms per word, minimum 4s, maximum 30s
+        const wordCount = text.split(' ').length;
+        const timeoutMs = Math.min(Math.max(wordCount * 80 / utterance.rate, 4000), 30000);
+        const safetyTimer = setTimeout(() => {
+          window.speechSynthesis.cancel();
+          setIsSpeaking(false);
+          currentUtterance.current = null;
+          resolve();
+        }, timeoutMs);
+
+        function finish() {
+          clearTimeout(safetyTimer);
+          setIsSpeaking(false);
+          currentUtterance.current = null;
+          resolve();
         }
 
         utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          currentUtterance.current = null;
-          resolve();
-        };
-        utterance.onerror = () => {
-          setIsSpeaking(false);
-          currentUtterance.current = null;
-          resolve();
-        };
+        utterance.onend = finish;
+        utterance.onerror = finish;
 
         currentUtterance.current = utterance;
         window.speechSynthesis.speak(utterance);
+
+        // Chrome bug: speechSynthesis pauses after ~15s in background tabs
+        // keepalive interval pokes it every 10s
+        const keepAlive = setInterval(() => {
+          if (!window.speechSynthesis.speaking) {
+            clearInterval(keepAlive);
+            return;
+          }
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }, 10000);
+
+        utterance.onend = () => { clearInterval(keepAlive); finish(); };
+        utterance.onerror = () => { clearInterval(keepAlive); finish(); };
       });
     },
     [isSupported, voices, rate]
