@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ClinicianDashboard } from './pages/ClinicianDashboard';
 import { PatientDashboard } from './pages/PatientDashboard';
+import { LandingPage } from './pages/LandingPage';
 import { Spinner } from './components/shared/Spinner';
 
 function RootRedirect() {
@@ -19,7 +20,7 @@ function RootRedirect() {
       </div>
     );
   }
-  if (!appUser) return <Navigate to="/login" replace />;
+  if (!appUser) return <LandingPage />;
   if (appUser.role === 'clinician') return <Navigate to="/dashboard" replace />;
   return <Navigate to="/patient-dashboard" replace />;
 }
@@ -28,6 +29,7 @@ export default function App() {
   return (
     <Routes>
       {/* Public */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
